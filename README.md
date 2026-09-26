@@ -30,4 +30,28 @@ cp .env.example .env
 npm run wallets && npm run airdrop
 npm run dev
 ```
+
+## Run the demo from scratch (local validator)
+Devnet's faucet is rate-limited, so the demo runs against a local validator. One device, no
+browser wallet — the buyer is a demo keypair the server signs with.
+```
+cp .env.example .env
+# in .env: SOLANA_RPC_URL=http://127.0.0.1:8899  and  NEXT_PUBLIC_SOLANA_RPC_URL=http://127.0.0.1:8899
+npm install
+npm run validator            # Windows: npm run validator:win — leave running in its own terminal
+npm run wallets              # writes .keys/*.json; paste the printed attester pubkey into
+                             # .env as ATTESTER_PUBKEY and NEXT_PUBLIC_ATTESTER_PUBKEY
+npm run airdrop              # fund seller + buyer locally
+npm run demo                 # scripted end-to-end: reset -> verify -> buy -> verify owner -> Explorer link
+```
+Then for the live browser flow: set `NEXT_PUBLIC_USE_MOCKS=false`, `npm run seed`, `npm run dev`.
+Explorer links use the local validator's custom cluster automatically. Full walkthrough:
+docs/DEMO_SCRIPT.md.
+
+### Settings
+- `NEXT_PUBLIC_USE_MOCKS` — `true` (default) keeps the frontend on in-memory mocks; `false`
+  wires the real chain: Buy calls the atomic settlement through the `/api/buy` server route.
+- `SOLANA_RPC_URL` / `NEXT_PUBLIC_SOLANA_RPC_URL` — devnet by default; set both to
+  `http://127.0.0.1:8899` for the local validator.
+
 See docs/WORKFLOW.md, docs/ARCHITECTURE.md, docs/TASKS.md, docs/DEMO_SCRIPT.md.

@@ -12,11 +12,10 @@
     "airdrop": "node --import tsx scripts/airdrop.ts",
     "seed": "node --import tsx scripts/seed.ts",
     "demo": "node --import tsx scripts/demo.ts",
-    "demo:ownership": "node --import tsx scripts/ownership-demo.ts",
-    "validator": "bash scripts/validator.sh",
-    "validator:win": "wsl bash scripts/validator.sh",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "validator": "bash scripts/validator.sh",
+    "validator:win": "wsl bash scripts/validator.sh"
   },
   "devDependencies": {
     "@types/node": "^20",

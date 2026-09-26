@@ -1,297 +1,162 @@
-import {
-  Connection,
-  Keypair,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-  TransactionInstruction,
-  sendAndConfirmTransaction,
-  type Signer,
-} from "@solana/web3.js"
-import {
-  AuthorityType,
-  TOKEN_2022_PROGRAM_ID,
-  createAssociatedTokenAccountIdempotentInstruction,
-  createInitializeMintInstruction,
-  createMintToCheckedInstruction,
-  createSetAuthorityInstruction,
-  createTransferCheckedInstruction,
-  getAccount,
-  getAssociatedTokenAddressSync,
-  getMint,
-  getMintLen,
-} from "@solana/spl-token"
-import type { OwnershipApi } from "@proven/shared"
-
-/** Re-export so Person 3 can build combined txs without digging into spl-token. */
-export { TOKEN_2022_PROGRAM_ID }
-
-export const PROVEN_ITEM = {
-  id: "PROVEN-001",
-  name: "Rolex Submariner",
-  serialNumber: "126610LN-8472",
-} as const
-
-export type ProvenAssetInput = {
-  connection: Connection
-  payer: Signer
-  seller: PublicKey
-  itemId: string
-  name: string
-  serialNumber: string
-}
-
-export type CreateProvenAssetResult = {
-  mint: PublicKey
-  signature: string
-  /** Off-chain identity recorded at mint time (demo MVP). */
-  identity: {
-    itemId: string
-    name: string
-    serialNumber: string
-  }
-}
+import type { Item, OwnershipApi, ProvenanceEntry } from "@proven/shared"
+import { Connection, Keypair, PublicKey } from "@solana/web3.js"
 
 /**
- * Creates a Token-2022 mint with decimals 0 and supply 1 held by the seller.
- * Mint authority is revoked so supply stays fixed.
+ * Minimal ownership: each item is a 0-decimals SPL token with supply 1 (mint authority
+ * revoked), so whoever holds the token owns the item. Swap for Metaplex Core later; the
+ * OwnershipApi contract stays the same.
  *
- * Note: on-chain Token Metadata extension is skipped for hackathon reliability
- * (local validator + Token-2022 metadata init was brittle). Item identity is
- * returned here and should be stored alongside the mint address by callers.
+ * Item metadata lives in apps/web/public/items.json (written by scripts/seed.ts, read
+ * server-side from disk and browser-side over HTTP). On-chain data is the source of truth
+ * for the owner.
  */
-export const createProvenAsset = async (
-  input: ProvenAssetInput,
-): Promise<CreateProvenAssetResult> => {
-  const { connection, payer, seller, itemId, name, serialNumber } = input
-  if (!itemId || !name || !serialNumber) {
-    throw new Error("Item identity is required")
-  }
 
-  const mint = Keypair.generate()
-  const mintSpace = getMintLen([])
-  const rent = await connection.getMinimumBalanceForRentExemption(mintSpace)
-  const sellerTokenAccount = getAssociatedTokenAddressSync(
-    mint.publicKey,
-    seller,
-    false,
-    TOKEN_2022_PROGRAM_ID,
-  )
+const rpcUrl = () =>
+  process.env.SOLANA_RPC_URL ?? process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "https://api.devnet.solana.com"
+let _conn: Connection | undefined
+const connection = () => (_conn ??= new Connection(rpcUrl(), "confirmed"))
+const isServer = () => typeof window === "undefined"
 
-  const tx = new Transaction().add(
-    SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
-      newAccountPubkey: mint.publicKey,
-      lamports: rent,
-      space: mintSpace,
-      programId: TOKEN_2022_PROGRAM_ID,
-    }),
-    createInitializeMintInstruction(
-      mint.publicKey,
-      0,
-      payer.publicKey,
-      null,
-      TOKEN_2022_PROGRAM_ID,
-    ),
-    createAssociatedTokenAccountIdempotentInstruction(
-      payer.publicKey,
-      sellerTokenAccount,
-      seller,
-      mint.publicKey,
-      TOKEN_2022_PROGRAM_ID,
-    ),
-    createMintToCheckedInstruction(
-      mint.publicKey,
-      sellerTokenAccount,
-      payer.publicKey,
-      1,
-      0,
-      [],
-      TOKEN_2022_PROGRAM_ID,
-    ),
-    createSetAuthorityInstruction(
-      mint.publicKey,
-      payer.publicKey,
-      AuthorityType.MintTokens,
-      null,
-      [],
-      TOKEN_2022_PROGRAM_ID,
-    ),
-  )
-
-  const signature = await sendAndConfirmTransaction(connection, tx, [payer, mint], {
-    commitment: "confirmed",
-  })
-
-  return {
-    mint: mint.publicKey,
-    signature,
-    identity: { itemId, name, serialNumber },
-  }
+/** Absolute path to items.json, anchored to this module's source so CWD doesn't matter. */
+async function itemsPath(): Promise<string> {
+  const { fileURLToPath } = await import("url")
+  return fileURLToPath(new URL("../../../apps/web/public/items.json", import.meta.url))
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+type Stored = Omit<Item, "ownerWallet" | "status" | "sellerVerified">
+type Store = Record<string, Stored>
 
-/** Reads the unique nonzero token account, then returns its on-chain authority. */
-export const getItemOwner = async (
-  connection: Connection,
-  mint: PublicKey,
-  options?: { retries?: number; delayMs?: number },
-): Promise<PublicKey> => {
-  const retries = options?.retries ?? 8
-  const delayMs = options?.delayMs ?? 400
-  let lastError: unknown
-
-  for (let attempt = 0; attempt < retries; attempt += 1) {
+async function readStore(): Promise<Store> {
+  if (isServer()) {
+    const { readFileSync } = await import("fs")
     try {
-      const mintState = await getMint(connection, mint, "confirmed", TOKEN_2022_PROGRAM_ID)
-      if (
-        mintState.decimals !== 0 ||
-        mintState.supply !== 1n ||
-        mintState.mintAuthority !== null
-      ) {
-        throw new Error("Mint is not a fixed-supply Proven ownership asset")
-      }
-
-      const holders = await connection.getTokenLargestAccounts(mint, "confirmed")
-      const owners = holders.value.filter((account) => account.amount === "1")
-      if (owners.length !== 1) {
-        throw new Error("Expected exactly one token holder")
-      }
-
-      const account = await getAccount(
-        connection,
-        owners[0].address,
-        "confirmed",
-        TOKEN_2022_PROGRAM_ID,
-      )
-      if (!account.mint.equals(mint) || account.amount !== 1n) {
-        throw new Error("Ownership changed during lookup; retry")
-      }
-
-      return account.owner
-    } catch (error) {
-      lastError = error
-      if (attempt < retries - 1) {
-        await sleep(delayMs)
-      }
+      return JSON.parse(readFileSync(await itemsPath(), "utf8"))
+    } catch {
+      return {}
     }
   }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("Failed to resolve item owner from chain")
+  const res = await fetch("/items.json", { cache: "no-store" })
+  return res.ok ? res.json() : {}
 }
 
-/** @deprecated Metadata extension removed for reliability — use createProvenAsset().identity */
-export const getProvenAssetIdentity = async (_connection: Connection, _mint: PublicKey) => {
-  return null
+async function writeStore(store: Store) {
+  const { writeFileSync, mkdirSync } = await import("fs")
+  const { dirname } = await import("path")
+  const p = await itemsPath()
+  mkdirSync(dirname(p), { recursive: true })
+  writeFileSync(p, JSON.stringify(store, null, 2) + "\n")
 }
 
-export type OwnershipTransferInput = {
-  connection: Connection
-  mint: PublicKey
-  seller: PublicKey
-  buyer: PublicKey
-  /** Funds the buyer's ATA if it does not exist yet (usually buyer or marketplace fee-payer). */
-  payer: PublicKey
+async function loadKeypair(path: string) {
+  const { readFileSync } = await import("fs")
+  return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(path, "utf8"))))
 }
 
-/**
- * Returns composable Token-2022 instructions for Person 3 to merge with payment.
- * Does NOT submit a transaction.
- */
-export const buildOwnershipTransferInstructions = async (
-  input: OwnershipTransferInput,
-): Promise<TransactionInstruction[]> => {
-  const { connection, mint, seller, buyer, payer } = input
-  if (seller.equals(buyer)) {
-    throw new Error("Seller and buyer must differ")
+/** Demo signers loaded lazily from .env — never load buyer.json unless we actually need it. */
+const demoSeller = () => loadKeypair(process.env.SELLER_KEYPAIR_PATH ?? ".keys/seller.json")
+const demoBuyer = () => loadKeypair(process.env.BUYER_KEYPAIR_PATH ?? ".keys/buyer.json")
+
+async function stored(id: string): Promise<Stored> {
+  const item = (await readStore())[id]
+  if (!item) throw new Error(`Item not found: ${id}`)
+  return item
+}
+
+async function ownerOf(mint: string): Promise<string> {
+  const conn = connection()
+  const largest = await conn.getTokenLargestAccounts(new PublicKey(mint))
+  const holder = largest.value.find((a) => a.uiAmount === 1)
+  if (!holder) throw new Error(`No holder found for asset ${mint}`)
+  const info = await conn.getParsedAccountInfo(holder.address)
+  const data = info.value?.data
+  if (!data || !("parsed" in data)) throw new Error(`Cannot read holder of ${mint}`)
+  return data.parsed.info.owner as string
+}
+
+async function toItem(s: Stored): Promise<Item> {
+  const ownerWallet = await ownerOf(s.assetAddress)
+  return {
+    ...s,
+    ownerWallet,
+    // Seller verification is a separate on-chain scan; callers that display it
+    // (the item page badge) run provenance.isVerified themselves, so we don't
+    // pay for it on every read here.
+    sellerVerified: false,
+    status: ownerWallet === s.sellerWallet ? "AVAILABLE" : "SOLD",
   }
-
-  const currentOwner = await getItemOwner(connection, mint)
-  if (!currentOwner.equals(seller)) {
-    throw new Error("Seller does not own this asset")
-  }
-
-  const sellerTokenAccount = getAssociatedTokenAddressSync(
-    mint,
-    seller,
-    false,
-    TOKEN_2022_PROGRAM_ID,
-  )
-  const buyerTokenAccount = getAssociatedTokenAddressSync(
-    mint,
-    buyer,
-    false,
-    TOKEN_2022_PROGRAM_ID,
-  )
-  const sellerAccount = await getAccount(
-    connection,
-    sellerTokenAccount,
-    "confirmed",
-    TOKEN_2022_PROGRAM_ID,
-  )
-  if (sellerAccount.amount !== 1n || !sellerAccount.owner.equals(seller)) {
-    throw new Error("Seller's associated token account must hold the asset")
-  }
-
-  return [
-    createAssociatedTokenAccountIdempotentInstruction(
-      payer,
-      buyerTokenAccount,
-      buyer,
-      mint,
-      TOKEN_2022_PROGRAM_ID,
-    ),
-    createTransferCheckedInstruction(
-      sellerTokenAccount,
-      mint,
-      buyerTokenAccount,
-      seller,
-      1,
-      0,
-      [],
-      TOKEN_2022_PROGRAM_ID,
-    ),
-  ]
-}
-
-/** Standalone demo wrapper. Atomic purchase flows should use the instruction builder. */
-export const transferOwnership = async (
-  input: Omit<OwnershipTransferInput, "seller" | "payer"> & {
-    seller: Signer
-    payer: Signer
-  },
-): Promise<string> => {
-  const instructions = await buildOwnershipTransferInstructions({
-    ...input,
-    seller: input.seller.publicKey,
-    payer: input.payer.publicKey,
-  })
-  const tx = new Transaction().add(...instructions)
-  const signers = input.seller.publicKey.equals(input.payer.publicKey)
-    ? [input.seller]
-    : [input.payer, input.seller]
-
-  return sendAndConfirmTransaction(input.connection, tx, signers, {
-    commitment: "confirmed",
-  })
 }
 
 export const ownership: OwnershipApi = {
-  async registerItem() {
-    throw new Error("Use createProvenAsset with a payer signer")
+  async registerItem(input) {
+    if (!isServer()) throw new Error("registerItem is server-only — call it from a script or API route")
+    const { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } =
+      await import("@solana/spl-token")
+    const seller = await demoSeller()
+    if (seller.publicKey.toBase58() !== input.sellerWallet) {
+      throw new Error("sellerWallet does not match SELLER_KEYPAIR_PATH")
+    }
+    const conn = connection()
+    const mint = await createMint(conn, seller, seller.publicKey, null, 0)
+    const ata = await getOrCreateAssociatedTokenAccount(conn, seller, mint, seller.publicKey)
+    const signature = await mintTo(conn, seller, mint, ata.address, seller, 1)
+    await setAuthority(conn, seller, mint, seller, AuthorityType.MintTokens, null) // supply fixed at 1
+
+    const entry: ProvenanceEntry = {
+      owner: input.sellerWallet,
+      signature,
+      at: new Date().toISOString(),
+    }
+    const record: Stored = {
+      ...input,
+      assetAddress: mint.toBase58(),
+      history: [entry],
+    }
+    const store = await readStore()
+    if (store[input.id]) {
+      console.warn(
+        `[ownership] registerItem: overwriting ${input.id} (previous asset ${store[input.id].assetAddress}); demo state reset.`,
+      )
+    }
+    store[input.id] = record
+    await writeStore(store)
+    return toItem(record)
   },
-  async getItem() {
-    throw new Error("Item lookup requires a mint address")
+
+  async getItem(id) {
+    return toItem(await stored(id))
   },
-  async getItemOwner() {
-    throw new Error("Use getItemOwner(connection, mint)")
+
+  async getItemOwner(id) {
+    return ownerOf((await stored(id)).assetAddress)
   },
-  async transferOwnership() {
-    throw new Error(
-      "Use buildOwnershipTransferInstructions or transferOwnership with signers",
-    )
+
+  async transferOwnership(itemId, toWallet) {
+    if (!isServer()) throw new Error("transferOwnership is server-only")
+    const { getOrCreateAssociatedTokenAccount, transfer } = await import("@solana/spl-token")
+    const s = await stored(itemId)
+    const mint = new PublicKey(s.assetAddress)
+    const currentOwner = await ownerOf(s.assetAddress)
+    // Only load the keypair we actually need — try seller first (initial state), then buyer.
+    const seller = await demoSeller()
+    const signer =
+      seller.publicKey.toBase58() === currentOwner
+        ? seller
+        : await demoBuyer()
+            .then((b) => (b.publicKey.toBase58() === currentOwner ? b : null))
+            .catch(() => null) // buyer.json may not exist; fall through to the clear error below
+    if (!signer) throw new Error(`No demo keypair for current owner ${currentOwner}`)
+
+    const conn = connection()
+    const from = await getOrCreateAssociatedTokenAccount(conn, signer, mint, signer.publicKey)
+    const to = await getOrCreateAssociatedTokenAccount(conn, signer, mint, new PublicKey(toWallet))
+    const signature = await transfer(conn, signer, from.address, to.address, signer, 1)
+
+    const store = await readStore()
+    store[itemId] = {
+      ...s,
+      history: [...s.history, { owner: toWallet, signature, at: new Date().toISOString() }],
+    }
+    await writeStore(store)
+    return toItem(store[itemId])
   },
 }

@@ -4,8 +4,8 @@
   "private": true,
   "main": "src/index.ts",
   "dependencies": {
-    "@proven/ownership": "*",
     "@proven/shared": "*",
+    "@solana/spl-token": "^0.4.9",
     "@solana/web3.js": "^1.95.0"
   }
 }

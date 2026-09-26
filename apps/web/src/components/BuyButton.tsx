@@ -2,8 +2,29 @@
 
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { getSettlement } from "@/lib/client"
+import type { PurchaseResult } from "@proven/shared"
+import { getSettlement, isMockMode } from "@/lib/client"
 import { MOCK_BUYER_WALLET } from "@/lib/mock"
+
+/**
+ * Real mode: settlement is server-only (signs with the demo buyer keypair), so the buy runs
+ * behind /api/buy. Mock mode stays fully client-side so UI work needs no chain.
+ */
+const runPurchase = async (itemId: string): Promise<PurchaseResult> => {
+  if (isMockMode()) {
+    return getSettlement().buy(itemId, MOCK_BUYER_WALLET)
+  }
+  const res = await fetch("/api/buy", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ itemId }),
+  })
+  const body = await res.json()
+  if (!res.ok) {
+    throw new Error(body?.error ?? "Purchase failed")
+  }
+  return body as PurchaseResult
+}
 
 type BuyButtonProps = {
   itemId: string
@@ -23,9 +44,7 @@ export const BuyButton = ({ itemId, disabled = false }: BuyButtonProps) => {
     router.push(`/processing?itemId=${encodeURIComponent(itemId)}`)
 
     try {
-      // TODO (P4): replace with connected wallet public key once adapter is wired.
-      const buyerWallet = MOCK_BUYER_WALLET
-      const result = await getSettlement().buy(itemId, buyerWallet)
+      const result = await runPurchase(itemId)
       const params = new URLSearchParams({
         itemId,
         signature: result.signature,
