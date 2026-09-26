@@ -1,0 +1,7 @@
+{
+  "name": "@proven/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": { "dev": "next dev", "build": "next build" },
+  "dependencies": { "@proven/shared": "*", "next": "^15", "react": "^19", "react-dom": "^19" }
+}

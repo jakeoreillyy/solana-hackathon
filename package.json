@@ -1,0 +1,6 @@
+{
+  "name": "proven",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": { "dev": "npm -w @proven/web run dev", "demo": "npx tsx scripts/demo.ts" }
+}
