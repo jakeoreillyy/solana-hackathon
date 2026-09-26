@@ -22,7 +22,7 @@ async function itemsPath(): Promise<string> {
   // Under Next, import.meta.url points into .next/, so next.config.mjs pins the real path.
   if (process.env.ITEMS_JSON_PATH) return process.env.ITEMS_JSON_PATH
   const { fileURLToPath } = await import("url")
-  return fileURLToPath(new URL("../../../apps/web/public/items.json", import.meta.url))
+  return fileURLToPath(new URL(/* webpackIgnore: true */ "../../../apps/web/public/items.json", import.meta.url))
 }
 
 type Stored = Omit<Item, "ownerWallet" | "status" | "sellerVerified">

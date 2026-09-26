@@ -1,22 +1,17 @@
-import { TxStatus } from "@/components/TxStatus"
+import { Suspense } from "react"
+import { AppShell } from "@/components/AppShell"
+import { ProcessingClient } from "./ProcessingClient"
 
-type ProcessingPageProps = {
-  searchParams: Promise<{ itemId?: string }>
-}
-
-export default async function Processing({ searchParams }: ProcessingPageProps) {
-  const query = await searchParams
-
+export default function ProcessingPage() {
   return (
-    <main className="mx-auto max-w-2xl space-y-4 p-8">
-      <TxStatus
-        label="Processing purchase"
-        detail={
-          query.itemId
-            ? `Settling payment and ownership for ${query.itemId}…`
-            : "Settling payment and ownership on Solana…"
-        }
-      />
-    </main>
+    <Suspense
+      fallback={
+        <AppShell activeStep="processing">
+          <p className="text-[#6E6E73]">Loading escrow status...</p>
+        </AppShell>
+      }
+    >
+      <ProcessingClient />
+    </Suspense>
   )
 }

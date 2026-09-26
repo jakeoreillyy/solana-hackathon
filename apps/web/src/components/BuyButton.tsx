@@ -41,17 +41,14 @@ export const BuyButton = ({ itemId, disabled = false }: BuyButtonProps) => {
     }
 
     setIsLoading(true)
-    router.push(`/processing?itemId=${encodeURIComponent(itemId)}`)
 
     try {
       const result = await runPurchase(itemId)
       const params = new URLSearchParams({
         itemId,
-        signature: result.signature,
-        newOwner: result.newOwner,
-        explorerUrl: result.explorerUrl,
+        escrowSignature: result.signature,
       })
-      router.push(`/success?${params.toString()}`)
+      router.push(`/processing?${params.toString()}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : "Purchase failed"
       router.push(`/item/${encodeURIComponent(itemId)}?error=${encodeURIComponent(message)}`)
@@ -67,7 +64,7 @@ export const BuyButton = ({ itemId, disabled = false }: BuyButtonProps) => {
     }
   }
 
-  return (
+    return (
     <button
       type="button"
       onClick={() => void handleClick()}
@@ -75,9 +72,9 @@ export const BuyButton = ({ itemId, disabled = false }: BuyButtonProps) => {
       disabled={disabled || isLoading}
       tabIndex={0}
       aria-label="Buy securely"
-      className="rounded bg-black px-6 py-3 text-white disabled:opacity-50"
+      className="buy-secure-button"
     >
-      {isLoading ? "Starting…" : "Buy securely"}
+      {isLoading ? "Securing funds…" : "Buy securely"}
     </button>
   )
 }

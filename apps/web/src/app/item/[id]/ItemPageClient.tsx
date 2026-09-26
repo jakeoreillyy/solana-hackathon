@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import type { Item } from "@proven/shared"
+import { AppShell } from "@/components/AppShell"
 import { BuyButton } from "@/components/BuyButton"
 import { ItemCard } from "@/components/ItemCard"
-import type { SellerStatus } from "@/components/VerifiedBadge"
+import { VerifiedBadge, type SellerStatus } from "@/components/VerifiedBadge"
 import { getOwnership, getProvenance, isMockMode } from "@/lib/client"
 
 type ItemPageClientProps = {
@@ -53,41 +54,58 @@ export const ItemPageClient = ({ id }: ItemPageClientProps) => {
     }
   }, [id])
 
+  const badgeStatus: SellerStatus =
+    sellerStatus ?? (item?.sellerVerified ? "verified" : "unverified")
+
   if (loadError) {
     return (
-      <main className="mx-auto max-w-2xl p-8">
-        <p className="text-red-700" role="alert">
+      <AppShell activeStep="item">
+        <p className="text-[#D70015]" role="alert">
           {loadError}
         </p>
-      </main>
+      </AppShell>
     )
   }
 
   if (!item) {
     return (
-      <main className="mx-auto max-w-2xl p-8">
-        <p>Loading item…</p>
-      </main>
+      <AppShell activeStep="item">
+        <p className="text-[#6E6E73]">Loading item…</p>
+      </AppShell>
     )
   }
 
   return (
-    <main className="mx-auto max-w-2xl space-y-8 p-8">
-      {isMockMode() ? (
-        <p className="text-xs text-amber-700" role="note">
-          Mock mode on (NEXT_PUBLIC_USE_MOCKS). Chain packages unused until set to false.
-        </p>
-      ) : null}
+    <AppShell activeStep="item">
+      <div className="product-page">
+        <a className="product-back-link" href="/#browse">← Back to marketplace</a>
+        {error ? (
+          <p
+            className="rounded-2xl bg-[#FFF1F0] p-4 text-sm text-[#D70015]"
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
 
-      {error ? (
-        <p className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800" role="alert">
-          {error}
-        </p>
-      ) : null}
-
-      <ItemCard item={item} sellerStatus={sellerStatus} />
-
-      <BuyButton itemId={item.id} disabled={item.status !== "AVAILABLE"} />
-    </main>
+        <div className="product-purchase-grid">
+          <ItemCard item={item} sellerStatus={sellerStatus} />
+          <aside className="checkout-panel" aria-label="Secure checkout">
+            <p className="checkout-eyebrow">TRUSTTAG SECURE PURCHASE</p>
+            <p className="checkout-price">${item.priceUsd.toLocaleString()}</p>
+            <p className="checkout-caption">One protected transaction</p>
+            <VerifiedBadge status={badgeStatus} />
+            <div className="checkout-steps">
+              <div><span>01</span><p>Payment is locked in escrow</p></div>
+              <div><span>02</span><p>Seller ships to your pickup office</p></div>
+              <div><span>03</span><p>Pickup confirmation releases payment</p></div>
+            </div>
+            <BuyButton itemId={item.id} disabled={item.status !== "AVAILABLE"} />
+            <p className="checkout-assurance">Your money stays protected until the handoff is independently confirmed.</p>
+            {item.status !== "AVAILABLE" ? <p className="checkout-status">This item is {item.status.toLowerCase()}.</p> : null}
+          </aside>
+        </div>
+      </div>
+    </AppShell>
   )
 }

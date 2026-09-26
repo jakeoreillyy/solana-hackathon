@@ -10,63 +10,61 @@ type ItemCardProps = {
 export const ItemCard = ({ item, sellerStatus }: ItemCardProps) => {
   const status: SellerStatus = sellerStatus ?? (item.sellerVerified ? "verified" : "unverified")
   return (
-    <article className="space-y-4" aria-label={`${item.name} listing`}>
-      {item.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={item.imageUrl}
-          alt={item.name}
-          className="aspect-square w-full max-w-sm rounded-lg border border-neutral-200 object-cover"
-        />
-      ) : null}
-
-      <header className="space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold">{item.name}</h1>
-          <VerifiedBadge status={status} />
-        </div>
-        <p className="text-neutral-600">{item.description}</p>
+    <article className="product-detail" aria-label={`${item.name} listing`}>
+      <img
+        src={item.imageUrl}
+        alt={item.name}
+        className="product-detail-image"
+      />
+      <header className="product-detail-header">
+        <h1 className="product-detail-title">{item.name}</h1>
+        <VerifiedBadge status={status} />
+        <p className="product-detail-description">{item.description}</p>
       </header>
 
-      <dl className="grid gap-2 text-sm">
-        <div>
-          <dt className="text-neutral-500">Serial / item identity</dt>
-          <dd className="font-mono">{item.serialNumber}</dd>
+      <div className="product-record">
+        <div className="product-record-heading">
+          <h2>Item record</h2>
+          <span>ON-CHAIN</span>
         </div>
-        <div>
-          <dt className="text-neutral-500">Status</dt>
-          <dd>{item.status}</dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">Price</dt>
-          <dd>
-            ${item.priceUsd.toLocaleString()} ({item.priceLamports} lamports)
-          </dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">Seller wallet</dt>
-          <dd className="break-all font-mono text-xs">{item.sellerWallet}</dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">Current on-chain owner</dt>
-          <dd className="break-all font-mono text-xs">{item.ownerWallet}</dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">Asset address</dt>
-          <dd className="break-all font-mono text-xs">{item.assetAddress}</dd>
-        </div>
-      </dl>
+        <dl>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Serial / item identity</dt>
+            <dd className="font-mono text-[#1D1D1F]">{item.serialNumber}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Status</dt>
+            <dd>{item.status}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Price in lamports</dt>
+            <dd className="font-mono">{item.priceLamports}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Seller wallet</dt>
+            <dd className="break-all font-mono text-xs text-right">{item.sellerWallet}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Current on-chain owner</dt>
+            <dd className="break-all font-mono text-xs text-right">{item.ownerWallet}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Asset address</dt>
+            <dd className="break-all font-mono text-xs text-right">{item.assetAddress}</dd>
+          </div>
+        </dl>
+      </div>
 
-      <section aria-label="Provenance history">
-        <h2 className="mb-2 text-lg font-medium">Provenance</h2>
+      <section className="provenance-history" aria-label="Provenance history">
+        <h2>Ownership history</h2>
         {item.history.length === 0 ? (
-          <p className="text-sm text-neutral-500">No history yet.</p>
+          <p className="text-sm text-[#6E6E73]">No history yet.</p>
         ) : (
-          <ol className="space-y-2 border-l border-neutral-300 pl-4">
+          <ol className="space-y-4 border-l border-[#D2D2D7] pl-4">
             {item.history.map((entry) => (
               <li key={`${entry.signature}-${entry.at}`} className="text-sm">
-                <p className="font-mono text-xs break-all">{entry.owner}</p>
-                <p className="text-neutral-500">{new Date(entry.at).toLocaleString()}</p>
+                <p className="break-all font-mono text-xs text-[#1D1D1F]">{entry.owner}</p>
+                <p className="text-[#6E6E73]">{new Date(entry.at).toLocaleString()}</p>
               </li>
             ))}
           </ol>

@@ -23,10 +23,12 @@ const styles: Record<SellerStatus, { className: string; label: string; text: str
 }
 
 export const VerifiedBadge = ({ status }: VerifiedBadgeProps) => {
-  const { className, label, text } = styles[status]
+  const { label, text } = styles[status]
   return (
     <span
-      className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${className}`}
+      className={`inline-flex items-center rounded-full bg-[#F5F5F7] px-3 py-1 text-xs font-medium ${
+        status === "verified" ? "text-[#1D8348]" : "text-[#6E6E73]"
+      }`}
       aria-label={label}
       aria-busy={status === "loading"}
       tabIndex={0}
