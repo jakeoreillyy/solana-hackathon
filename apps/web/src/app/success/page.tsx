@@ -1,1 +1,10 @@
-export default function Success() { return <main className="p-8">Purchase complete (TODO P4)</main>; }
+import { Suspense } from "react"
+import { SuccessClient } from "./SuccessClient"
+
+export default function Success() {
+  return (
+    <Suspense fallback={<main className="p-8">Loading…</main>}>
+      <SuccessClient />
+    </Suspense>
+  )
+}

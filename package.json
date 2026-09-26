@@ -13,5 +13,9 @@
     "test": "vitest run"
   },
   "devDependencies": { "@types/node": "^20", "tsx": "^4", "typescript": "^5", "vitest": "^2" },
-  "dependencies": { "@solana/web3.js": "^1.95.0" }
+  "dependencies": { "@solana/web3.js": "^1.95.0" },
+  "overrides": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
 }
