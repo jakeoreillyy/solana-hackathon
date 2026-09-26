@@ -1,3 +1,4 @@
+import "dotenv/config"
 import { Keypair } from "@solana/web3.js";
 import { mkdirSync, writeFileSync } from "fs";
 mkdirSync(".keys", { recursive: true });
