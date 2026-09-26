@@ -1,11 +1,14 @@
 import type { Item } from "@proven/shared"
-import { VerifiedBadge } from "./VerifiedBadge"
+import { VerifiedBadge, type SellerStatus } from "./VerifiedBadge"
 
 type ItemCardProps = {
   item: Item
+  /** Live seller check; falls back to item.sellerVerified when omitted. */
+  sellerStatus?: SellerStatus
 }
 
-export const ItemCard = ({ item }: ItemCardProps) => {
+export const ItemCard = ({ item, sellerStatus }: ItemCardProps) => {
+  const status: SellerStatus = sellerStatus ?? (item.sellerVerified ? "verified" : "unverified")
   return (
     <article className="product-detail" aria-label={`${item.name} listing`}>
       <img
@@ -15,9 +18,7 @@ export const ItemCard = ({ item }: ItemCardProps) => {
       />
       <header className="product-detail-header">
         <h1 className="product-detail-title">{item.name}</h1>
-        {item.sellerVerified ? (
-          <VerifiedBadge />
-        ) : null}
+        <VerifiedBadge status={status} />
         <p className="product-detail-description">{item.description}</p>
       </header>
 

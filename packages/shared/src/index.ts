@@ -1,7 +1,7 @@
 // Shared contract between all packages. Change via PR, announce in chat.
 export const CLUSTER = "devnet" as const
 
-export type SolanaNetwork = "devnet" | "mainnet-beta" | "testnet"
+export type SolanaNetwork = "devnet" | "mainnet-beta" | "testnet" | "localnet"
 
 export type ItemStatus = "AVAILABLE" | "PENDING" | "SOLD"
 
@@ -38,11 +38,34 @@ export interface PurchaseResult {
   explorerUrl: string
 }
 
-export const explorerTx = (sig: string, network: SolanaNetwork = CLUSTER) =>
-  `https://explorer.solana.com/tx/${sig}?cluster=${network}`
+/** RPC URL from env, if any (server or NEXT_PUBLIC_ for the browser). */
+const envRpcUrl = (): string =>
+  (typeof process !== "undefined" &&
+    (process.env.SOLANA_RPC_URL ?? process.env.NEXT_PUBLIC_SOLANA_RPC_URL)) ||
+  ""
 
-export const explorerAddr = (a: string, network: SolanaNetwork = CLUSTER) =>
-  `https://explorer.solana.com/address/${a}?cluster=${network}`
+const isLocalRpc = (url: string): boolean => /127\.0\.0\.1|localhost|0\.0\.0\.0/.test(url)
+
+/**
+ * Network to link to when none is passed: `localnet` when the configured RPC URL is a
+ * local validator, otherwise the default CLUSTER. So the same call yields correct links
+ * whether the demo runs on devnet or a local validator.
+ */
+export const defaultNetwork = (): SolanaNetwork =>
+  isLocalRpc(envRpcUrl()) ? "localnet" : CLUSTER
+
+/** Explorer cluster query string. Local validators need `custom` + the RPC URL. */
+const clusterQuery = (network: SolanaNetwork): string => {
+  if (network !== "localnet") return `cluster=${network}`
+  const url = envRpcUrl() || "http://127.0.0.1:8899"
+  return `cluster=custom&customUrl=${encodeURIComponent(url)}`
+}
+
+export const explorerTx = (sig: string, network: SolanaNetwork = defaultNetwork()) =>
+  `https://explorer.solana.com/tx/${sig}?${clusterQuery(network)}`
+
+export const explorerAddr = (a: string, network: SolanaNetwork = defaultNetwork()) =>
+  `https://explorer.solana.com/address/${a}?${clusterQuery(network)}`
 
 export const getExplorerUrl = explorerTx
 

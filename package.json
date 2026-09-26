@@ -1,21 +1,37 @@
 {
   "name": "proven",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm -w @proven/web run dev",
     "build": "npm -w @proven/web run build",
-    "wallets": "tsx scripts/gen-wallets.ts",
-    "airdrop": "tsx scripts/airdrop.ts",
-    "seed": "tsx scripts/seed.ts",
-    "demo": "tsx scripts/demo.ts",
+    "wallets": "node --import tsx scripts/gen-wallets.ts",
+    "airdrop": "node --import tsx scripts/airdrop.ts",
+    "seed": "node --import tsx scripts/seed.ts",
+    "demo": "node --import tsx scripts/demo.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "validator": "bash scripts/validator.sh",
+    "validator:win": "wsl bash scripts/validator.sh"
   },
-  "devDependencies": { "@types/node": "^20", "tsx": "^4", "typescript": "^5", "vitest": "^2" },
-  "dependencies": { "@solana/web3.js": "^1.95.0" },
+  "devDependencies": {
+    "@types/node": "^20",
+    "dotenv": "^18.0.4",
+    "tsx": "^4",
+    "typescript": "^5",
+    "vitest": "^2"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.0"
+  },
   "overrides": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.63.5"
   }
 }
