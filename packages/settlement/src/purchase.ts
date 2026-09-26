@@ -1,8 +1,4 @@
-import { fetchAssetV1, mplCore, transfer } from "@metaplex-foundation/mpl-core"
-import { createNoopSigner, publicKey } from "@metaplex-foundation/umi"
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults"
-import { toWeb3JsInstruction } from "@metaplex-foundation/umi-web3js-adapters"
-import { ownership } from "@proven/ownership"
+import { buildOwnershipTransferInstructions, ownership } from "@proven/ownership"
 import { explorerTx, type Item, type PurchaseResult } from "@proven/shared"
 import {
   Connection,
@@ -130,30 +126,22 @@ export const buildAtomicPurchaseTransaction = async (
   buyer: PublicKey,
 ): Promise<Transaction> => {
   const terms = assertCanSettle(item, buyer.toBase58())
-  const umi = createUmi(connection.rpcEndpoint).use(mplCore())
-  const assetPk = publicKey(terms.asset.toBase58())
 
-  let asset: Awaited<ReturnType<typeof fetchAssetV1>>
+  let transferInstructions
   try {
-    asset = await fetchAssetV1(umi, assetPk, { commitment: "confirmed" })
+    transferInstructions = await buildOwnershipTransferInstructions({
+      connection,
+      mint: terms.asset,
+      seller: terms.seller,
+      buyer: terms.buyer,
+      payer: terms.buyer,
+    })
   } catch (error) {
-    throw new SettlementError(
-      `Could not load Core asset ${terms.asset.toBase58()}: ${errorMessage(error)}`,
-    )
+    if (error instanceof SettlementError) {
+      throw error
+    }
+    throw new SettlementError(errorMessage(error))
   }
-
-  if (String(asset.owner) !== terms.seller.toBase58()) {
-    throw new SettlementError(
-      `On-chain owner is ${String(asset.owner)}, expected seller ${terms.seller.toBase58()}`,
-    )
-  }
-
-  const coreTransfer = transfer(umi, {
-    asset,
-    newOwner: publicKey(terms.buyer.toBase58()),
-    authority: createNoopSigner(publicKey(terms.seller.toBase58())),
-    payer: createNoopSigner(publicKey(terms.buyer.toBase58())),
-  })
 
   const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed")
   const tx = new Transaction({
@@ -167,7 +155,7 @@ export const buildAtomicPurchaseTransaction = async (
       toPubkey: terms.seller,
       lamports: Number(terms.priceLamports),
     }),
-    ...coreTransfer.getInstructions().map((instruction) => toWeb3JsInstruction(instruction)),
+    ...transferInstructions,
   )
   return tx
 }

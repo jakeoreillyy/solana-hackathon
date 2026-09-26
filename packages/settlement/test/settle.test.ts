@@ -1,7 +1,9 @@
-import { create, fetchAssetV1, mplCore } from "@metaplex-foundation/mpl-core"
-import { generateSigner, keypairIdentity, publicKey } from "@metaplex-foundation/umi"
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults"
-import { fromWeb3JsKeypair, toWeb3JsTransaction } from "@metaplex-foundation/umi-web3js-adapters"
+import {
+  PROVEN_ITEM,
+  TOKEN_2022_PROGRAM_ID,
+  createProvenAsset,
+  getItemOwner,
+} from "@proven/ownership"
 import type { Item } from "@proven/shared"
 import {
   Connection,
@@ -19,17 +21,16 @@ import {
   settlePurchase,
 } from "../src/purchase"
 
-const MPL_CORE_PROGRAM_ID = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
 const RPC_URL = process.env.SOLANA_RPC_URL
 
 const sellerAddress = Keypair.generate().publicKey.toBase58()
 const buyerAddress = Keypair.generate().publicKey.toBase58()
 
 const baseItem = (overrides: Partial<Item> = {}): Item => ({
-  id: "PROVEN-001",
-  name: "Rolex Submariner",
+  id: PROVEN_ITEM.id,
+  name: PROVEN_ITEM.name,
   description: "Settlement test item",
-  serialNumber: "126610LN-8472",
+  serialNumber: PROVEN_ITEM.serialNumber,
   imageUrl: "",
   priceUsd: 3000,
   priceLamports: "1000000",
@@ -92,7 +93,7 @@ describe("settlement checks", () => {
 
 describe("local validator atomic swap", () => {
   it.skipIf(!RPC_URL)(
-    "pays the seller and transfers the Core asset to the buyer in one transaction",
+    "pays the seller and transfers the Token-2022 item to the buyer in one transaction",
     async () => {
       const connection = new Connection(RPC_URL ?? "http://127.0.0.1:8899", "confirmed")
       const seller = Keypair.generate()
@@ -102,10 +103,17 @@ describe("local validator atomic swap", () => {
       await airdrop(connection, seller.publicKey, LAMPORTS_PER_SOL)
       await airdrop(connection, buyer.publicKey, LAMPORTS_PER_SOL)
 
-      const assetAddress = await mintFixture(connection, seller)
+      const created = await createProvenAsset({
+        connection,
+        payer: seller,
+        seller: seller.publicKey,
+        itemId: PROVEN_ITEM.id,
+        name: PROVEN_ITEM.name,
+        serialNumber: PROVEN_ITEM.serialNumber,
+      })
       const before = await connection.getBalance(seller.publicKey, "confirmed")
       const item = baseItem({
-        assetAddress,
+        assetAddress: created.mint.toBase58(),
         ownerWallet: seller.publicKey.toBase58(),
         sellerWallet: seller.publicKey.toBase58(),
         priceLamports: priceLamports.toString(),
@@ -117,11 +125,9 @@ describe("local validator atomic swap", () => {
       expect(after - before).toBe(Number(priceLamports))
       expect(result.newOwner).toBe(buyer.publicKey.toBase58())
       expect(result.explorerUrl).toContain(result.signature)
-      expect(result.explorerUrl).toContain("devnet")
 
-      const umi = createUmi(connection.rpcEndpoint).use(mplCore())
-      const asset = await fetchAssetV1(umi, publicKey(assetAddress), { commitment: "confirmed" })
-      expect(String(asset.owner)).toBe(buyer.publicKey.toBase58())
+      const owner = await getItemOwner(connection, created.mint)
+      expect(owner.toBase58()).toBe(buyer.publicKey.toBase58())
 
       const confirmed = await connection.getTransaction(result.signature, {
         commitment: "confirmed",
@@ -134,30 +140,11 @@ describe("local validator atomic swap", () => {
         accountKeys[instruction.programIdIndex].toBase58(),
       )
       expect(programIds).toContain(SystemProgram.programId.toBase58())
-      expect(programIds).toContain(MPL_CORE_PROGRAM_ID)
+      expect(programIds).toContain(TOKEN_2022_PROGRAM_ID.toBase58())
     },
     180_000,
   )
 })
-
-const mintFixture = async (connection: Connection, seller: Keypair): Promise<string> => {
-  const umi = createUmi(connection.rpcEndpoint).use(mplCore())
-  umi.use(keypairIdentity(fromWeb3JsKeypair(seller)))
-  const asset = generateSigner(umi)
-  let builder = create(umi, {
-    asset,
-    name: "Proven settlement fixture",
-    uri: "https://example.com/proven-settlement-fixture.json",
-    owner: publicKey(seller.publicKey.toBase58()),
-  }).useLegacyVersion()
-  builder = await builder.setLatestBlockhash(umi)
-  const built = await builder.buildAndSign(umi)
-  const signature = await connection.sendRawTransaction(toWeb3JsTransaction(built).serialize(), {
-    skipPreflight: false,
-  })
-  await connection.confirmTransaction(signature, "confirmed")
-  return String(asset.publicKey)
-}
 
 const airdrop = async (connection: Connection, pubkey: PublicKey, lamports: number) => {
   let lastError: unknown

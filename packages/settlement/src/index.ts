@@ -1,6 +1,6 @@
 import type { SettlementApi } from "@proven/shared"
 
-// One transaction: buyer pays seller in SOL, and the Core asset moves to the buyer.
+// One transaction: buyer pays seller in SOL, and the Token-2022 item moves to the buyer.
 // Both wallets sign. Escrow is out of scope until this swap is the demo.
 export const settlement: SettlementApi = {
   async buy(itemId, buyerWallet) {
