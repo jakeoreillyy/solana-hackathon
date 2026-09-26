@@ -1,5 +1,6 @@
 "use client"
 
+import { AppShell } from "@/components/AppShell"
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import type { Item } from "@proven/shared"
@@ -35,65 +36,72 @@ export const SuccessClient = () => {
     }
   }, [itemId])
 
-  return (
-    <main className="mx-auto max-w-2xl space-y-6 p-8">
-      <h1 className="text-3xl font-semibold">Purchase complete</h1>
-      <p className="text-neutral-600">
-        Payment settled and ownership transferred. You are the new owner.
-      </p>
+    return (
+    <AppShell activeStep="success">
+      <div className="mx-auto max-w-lg space-y-10">
+        <div className="flex flex-col items-center text-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-[#F5F5F7] flex items-center justify-center text-[#1D8348] text-2xl">
+            ✓
+          </div>
+          <h1 className="text-3xl font-semibold">Purchase complete</h1>
+          <p className="text-[#6E6E73]">
+            Payment settled and ownership transferred. You are the new owner.
+          </p>
+        </div>
 
-      {item ? (
-        <dl className="space-y-2 text-sm">
-          <div>
-            <dt className="text-neutral-500">Item</dt>
-            <dd>{item.name}</dd>
+        {item ? (
+          <div className="rounded-2xl bg-[#F5F5F7] p-6">
+            <dl className="space-y-3 text-sm">
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="text-[#6E6E73]">Item</dt>
+                <dd>{item.name}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="text-[#6E6E73]">Status</dt>
+                <dd>{item.status}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="text-[#6E6E73]">New owner</dt>
+                <dd className="break-all font-mono text-xs text-right">
+                  {newOwner ?? item.ownerWallet}
+                </dd>
+              </div>
+              {signature ? (
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-[#6E6E73]">Signature</dt>
+                  <dd className="break-all font-mono text-xs text-right">{signature}</dd>
+                </div>
+              ) : null}
+            </dl>
           </div>
-          <div>
-            <dt className="text-neutral-500">Status</dt>
-            <dd>{item.status}</dd>
-          </div>
-          <div>
-            <dt className="text-neutral-500">New owner</dt>
-            <dd className="break-all font-mono text-xs">
-              {newOwner ?? item.ownerWallet}
-            </dd>
-          </div>
-          {signature ? (
-            <div>
-              <dt className="text-neutral-500">Signature</dt>
-              <dd className="break-all font-mono text-xs">{signature}</dd>
-            </div>
+        ) : null}
+
+        <div className="space-y-3">
+          {explorerUrl ? (
+            <a
+              href={explorerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              tabIndex={0}
+              aria-label="Open Solana Explorer transaction"
+              className="block w-full text-center rounded-full bg-[#0071E3] px-6 py-3.5 text-white font-medium hover:bg-[#0077ED] transition-colors"
+            >
+              View on Solana Explorer
+            </a>
           ) : null}
-        </dl>
-      ) : null}
 
-      {explorerUrl ? (
-        <p>
-          <a
-            href={explorerUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-            tabIndex={0}
-            aria-label="Open Solana Explorer transaction"
-          >
-            View on Solana Explorer
-          </a>
-        </p>
-      ) : null}
-
-      {itemId ? (
-        <p>
-          <a
-            href={`/item/${encodeURIComponent(itemId)}`}
-            className="underline"
-            tabIndex={0}
-            aria-label="Back to item listing"
-          >
-            Back to listing
-          </a>
-        </p>
-      ) : null}
-    </main>
+          {itemId ? (
+            <a
+              href={`/item/${encodeURIComponent(itemId)}`}
+              tabIndex={0}
+              aria-label="Back to item listing"
+              className="block w-full text-center text-[#0071E3] text-sm hover:underline"
+            >
+              Back to listing
+            </a>
+          ) : null}
+        </div>
+      </div>
+    </AppShell>
   )
 }

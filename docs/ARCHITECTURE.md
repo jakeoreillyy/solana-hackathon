@@ -2,7 +2,10 @@
 
 Seller wallet --(attested by)--> Verified Seller
 Item (serial/QR) --> on-chain asset (Metaplex Core) owned by seller wallet
-Buy: ONE atomic tx = buyer pays seller (SOL/USDC) + asset transfers to buyer
+Buy: buyer deposits payment into transaction-specific escrow; seller still owns the item
+Pickup: independent post-office confirmation releases escrow and transfers item ownership
+No pickup: after the agreed window, return the item and refund the buyer
+Dispute: hold escrow for independent review before releasing funds
 Frontend reads item state from chain (or mocks), shows Explorer link.
 
 ## Layout (responsibilities, not bureaucracy)
@@ -14,7 +17,7 @@ packages/settlement   buy / buildPurchaseTransaction / executePurchase
 packages/provenance   attestSeller / verifySeller / qrFor
 scripts/              wallets, airdrop, seed, demo
 docs/                 architecture, tasks, demo script, pitch
-programs/escrow       STRETCH only — do not start until atomic swap works
+programs/escrow       Planned on-chain escrow enforcement; current web flow is mocked
 ```
 
 ## UI → Solana boundary

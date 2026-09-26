@@ -38,7 +38,7 @@ type Store = Record<string, Stored>
 /** Absolute path to items.json, anchored to this module so CWD doesn't matter. */
 async function itemsPath(): Promise<string> {
   const { fileURLToPath } = await import("url")
-  return fileURLToPath(new URL("../../../apps/web/public/items.json", import.meta.url))
+  return fileURLToPath(new URL(/* webpackIgnore: true */ "../../../apps/web/public/items.json", import.meta.url))
 }
 
 async function readStore(): Promise<Store> {
@@ -183,6 +183,11 @@ export const settlement: SettlementApi = {
 
     await recordSale(itemId, item, buyer.toBase58(), signature)
     return { signature, newOwner: buyer.toBase58(), explorerUrl: explorerTx(signature) }
+  },
+  async confirmPickup() {
+    throw new Error(
+      "Pickup confirmation is mock-only. On-chain buy already transfers payment and ownership together.",
+    )
   },
 
   async buildPurchaseTransaction(itemId, buyerWallet): Promise<Uint8Array> {

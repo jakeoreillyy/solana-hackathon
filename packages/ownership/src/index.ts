@@ -20,7 +20,7 @@ const isServer = () => typeof window === "undefined"
 /** Absolute path to items.json, anchored to this module's source so CWD doesn't matter. */
 async function itemsPath(): Promise<string> {
   const { fileURLToPath } = await import("url")
-  return fileURLToPath(new URL("../../../apps/web/public/items.json", import.meta.url))
+  return fileURLToPath(new URL(/* webpackIgnore: true */ "../../../apps/web/public/items.json", import.meta.url))
 }
 
 type Stored = Omit<Item, "ownerWallet" | "status" | "sellerVerified">
