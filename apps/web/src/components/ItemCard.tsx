@@ -7,54 +7,61 @@ type ItemCardProps = {
 
 export const ItemCard = ({ item }: ItemCardProps) => {
   return (
-    <article className="space-y-4" aria-label={`${item.name} listing`}>
-      <header className="space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold">{item.name}</h1>
-          {item.sellerVerified ? <VerifiedBadge /> : null}
+    <article className="space-y-10" aria-label={`${item.name} listing`}>
+      <header className="space-y-4 text-center">
+        <div className="flex items-center justify-center gap-3">
+          <h1 className="text-4xl font-semibold tracking-tight">{item.name}</h1>
         </div>
-        <p className="text-neutral-600">{item.description}</p>
+        {item.sellerVerified ? (
+          <div className="flex justify-center">
+            <VerifiedBadge />
+          </div>
+        ) : null}
+        <p className="text-[#6E6E73] max-w-md mx-auto">{item.description}</p>
+        <p className="text-3xl font-semibold tracking-tight pt-2">
+          ${item.priceUsd.toLocaleString()}
+        </p>
       </header>
 
-      <dl className="grid gap-2 text-sm">
-        <div>
-          <dt className="text-neutral-500">Serial / item identity</dt>
-          <dd className="font-mono">{item.serialNumber}</dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">Status</dt>
-          <dd>{item.status}</dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">Price</dt>
-          <dd>
-            ${item.priceUsd.toLocaleString()} ({item.priceLamports} lamports)
-          </dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">Seller wallet</dt>
-          <dd className="break-all font-mono text-xs">{item.sellerWallet}</dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">Current on-chain owner</dt>
-          <dd className="break-all font-mono text-xs">{item.ownerWallet}</dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">Asset address</dt>
-          <dd className="break-all font-mono text-xs">{item.assetAddress}</dd>
-        </div>
-      </dl>
+      <div className="rounded-2xl bg-[#F5F5F7] p-6">
+        <dl className="grid gap-3 text-sm">
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Serial / item identity</dt>
+            <dd className="font-mono text-[#1D1D1F]">{item.serialNumber}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Status</dt>
+            <dd>{item.status}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Price in lamports</dt>
+            <dd className="font-mono">{item.priceLamports}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Seller wallet</dt>
+            <dd className="break-all font-mono text-xs text-right">{item.sellerWallet}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Current on-chain owner</dt>
+            <dd className="break-all font-mono text-xs text-right">{item.ownerWallet}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-[#6E6E73]">Asset address</dt>
+            <dd className="break-all font-mono text-xs text-right">{item.assetAddress}</dd>
+          </div>
+        </dl>
+      </div>
 
       <section aria-label="Provenance history">
-        <h2 className="mb-2 text-lg font-medium">Provenance</h2>
+        <h2 className="mb-4 text-lg font-semibold tracking-tight">Provenance</h2>
         {item.history.length === 0 ? (
-          <p className="text-sm text-neutral-500">No history yet.</p>
+          <p className="text-sm text-[#6E6E73]">No history yet.</p>
         ) : (
-          <ol className="space-y-2 border-l border-neutral-300 pl-4">
+          <ol className="space-y-4 border-l border-[#D2D2D7] pl-4">
             {item.history.map((entry) => (
               <li key={`${entry.signature}-${entry.at}`} className="text-sm">
-                <p className="font-mono text-xs break-all">{entry.owner}</p>
-                <p className="text-neutral-500">{new Date(entry.at).toLocaleString()}</p>
+                <p className="break-all font-mono text-xs text-[#1D1D1F]">{entry.owner}</p>
+                <p className="text-[#6E6E73]">{new Date(entry.at).toLocaleString()}</p>
               </li>
             ))}
           </ol>

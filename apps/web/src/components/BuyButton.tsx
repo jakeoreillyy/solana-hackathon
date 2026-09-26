@@ -48,7 +48,7 @@ export const BuyButton = ({ itemId, disabled = false }: BuyButtonProps) => {
     }
   }
 
-  return (
+    return (
     <button
       type="button"
       onClick={() => void handleClick()}
@@ -56,7 +56,7 @@ export const BuyButton = ({ itemId, disabled = false }: BuyButtonProps) => {
       disabled={disabled || isLoading}
       tabIndex={0}
       aria-label="Buy securely"
-      className="rounded bg-black px-6 py-3 text-white disabled:opacity-50"
+      className="w-full rounded-full bg-[#0071E3] px-6 py-3.5 text-white font-medium hover:bg-[#0077ED] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isLoading ? "Starting…" : "Buy securely"}
     </button>
