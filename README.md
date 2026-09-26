@@ -9,6 +9,18 @@ Decentralized trust layer for buying high-value physical items from strangers, o
 | 4 | Frontend | apps/web | feat/frontend |
 | 5 | Provenance + integration | packages/provenance, scripts | feat/integration |
 
+## Who owns what
+
+| Person | Role | Work in these folders | Don't edit |
+|---|---|---|---|
+| 1 | Pitch / explanation | `docs/pitch/` (slides, `screenshots/`, `tx-proofs.md`) | everything else |
+| 2 | Solana ownership | `packages/ownership/` | other packages |
+| 3 | Payment + settlement | `packages/settlement/` (stretch: `programs/escrow/`) | other packages |
+| 4 | Frontend | `apps/web/` (`src/app`, `src/components`, `src/lib`) | `packages/*` |
+| 5 | Provenance + integration | `packages/provenance/`, `scripts/`, `docs/DEMO_SCRIPT.md` | other packages |
+
+Shared by everyone (PR + announce in chat): `packages/shared/`, root config, `.github/`.
+
 Rules: stay in your folder; shared types live in `packages/shared` (PR + announce); merge to `main` often.
 
 ## Quick start
