@@ -35,12 +35,18 @@ const FEE_CUSHION_LAMPORTS = 5_000_000 // 0.005 SOL
 type Stored = Omit<Item, "ownerWallet" | "status" | "sellerVerified">
 type Store = Record<string, Stored>
 
-/** Absolute path to items.json, anchored to this module so CWD doesn't matter. */
+/** Absolute path to items.json. Works from the repo root and from `apps/web` (Next.js). */
 async function itemsPath(): Promise<string> {
-  // Under Next, import.meta.url points into .next/, so next.config.mjs pins the real path.
   if (process.env.ITEMS_JSON_PATH) return process.env.ITEMS_JSON_PATH
-  const { fileURLToPath } = await import("url")
-  return fileURLToPath(new URL(/* webpackIgnore: true */ "../../../apps/web/public/items.json", import.meta.url))
+  const { resolve } = await import("path")
+  const { existsSync } = await import("fs")
+  const cwd = process.cwd()
+  const candidates = [
+    resolve(cwd, "public/items.json"),
+    resolve(cwd, "apps/web/public/items.json"),
+    resolve(cwd, "..", "..", "apps/web/public/items.json"),
+  ]
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
 }
 
 async function readStore(): Promise<Store> {
@@ -60,9 +66,19 @@ async function writeStore(store: Store) {
   writeFileSync(p, JSON.stringify(store, null, 2) + "\n")
 }
 
+async function resolveFromRepo(filePath: string): Promise<string> {
+  const { isAbsolute, resolve } = await import("path")
+  const { existsSync } = await import("fs")
+  if (isAbsolute(filePath)) return filePath
+  const cwd = process.cwd()
+  const candidates = [resolve(cwd, filePath), resolve(cwd, "..", "..", filePath)]
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
+}
+
 async function loadKeypair(path: string) {
   const { readFileSync } = await import("fs")
-  return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(path, "utf8"))))
+  const fullPath = await resolveFromRepo(path)
+  return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(fullPath, "utf8"))))
 }
 
 const demoSeller = () => loadKeypair(process.env.SELLER_KEYPAIR_PATH ?? ".keys/seller.json")

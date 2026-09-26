@@ -1,6 +1,7 @@
 "use client"
 
 import { AppShell } from "@/components/AppShell"
+import { SettlementProof } from "@/components/SettlementProof"
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import type { Item } from "@proven/shared"
@@ -38,7 +39,7 @@ export const SuccessClient = () => {
 
     return (
     <AppShell activeStep="success">
-      <div className="mx-auto max-w-lg space-y-10">
+      <div className="mx-auto max-w-5xl space-y-10">
         <div className="flex flex-col items-center text-center gap-4">
           <div className="w-14 h-14 rounded-full bg-[#F5F5F7] flex items-center justify-center text-[#1D8348] text-2xl">
             ✓
@@ -76,7 +77,9 @@ export const SuccessClient = () => {
           </div>
         ) : null}
 
-        <div className="space-y-3">
+        {itemId ? <SettlementProof itemId={itemId} itemStatus={item?.status ?? "SOLD"} /> : null}
+
+        <div className="mx-auto max-w-lg space-y-3">
           {explorerUrl ? (
             <a
               href={explorerUrl}

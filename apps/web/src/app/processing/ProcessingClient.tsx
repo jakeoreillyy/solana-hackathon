@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import type { Item } from "@proven/shared"
+import { explorerTx, type Item } from "@proven/shared"
 import { AppShell } from "@/components/AppShell"
 import { getOwnership, getSettlement, isMockMode } from "@/lib/client"
 import { MOCK_BUYER_WALLET } from "@/lib/mock"
@@ -107,6 +107,17 @@ export const ProcessingClient = () => {
       cancelled = true
     }
   }, [itemId])
+
+  useEffect(() => {
+    if (isMockMode() || !itemId || !item || !escrowSignature || item.status !== "SOLD") return
+    const params = new URLSearchParams({
+      itemId,
+      signature: escrowSignature,
+      newOwner: item.ownerWallet,
+      explorerUrl: explorerTx(escrowSignature),
+    })
+    router.replace(`/success?${params.toString()}`)
+  }, [escrowSignature, item, itemId, router])
 
   const handleContinue = async () => {
     if (phase < 2) {

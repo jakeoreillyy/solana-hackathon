@@ -1,5 +1,6 @@
 // Server/scripts only: needs the attester secret key.
-import { readFileSync } from "fs"
+import { existsSync, readFileSync } from "fs"
+import { resolve } from "path"
 import {
   Connection, Keypair, Transaction, TransactionInstruction, sendAndConfirmTransaction,
 } from "@solana/web3.js"
@@ -8,8 +9,15 @@ import {
 } from "./config"
 import { isVerified, markVerified } from "./verify"
 
+function resolveFromRepo(filePath: string): string {
+  if (filePath.startsWith("/")) return filePath
+  const cwd = process.cwd()
+  const candidates = [resolve(cwd, filePath), resolve(cwd, "..", "..", filePath)]
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
+}
+
 export function loadAttester(path = attesterKeypairPath()): Keypair {
-  return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(path, "utf8"))))
+  return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(resolveFromRepo(path), "utf8"))))
 }
 
 export async function attestSeller(

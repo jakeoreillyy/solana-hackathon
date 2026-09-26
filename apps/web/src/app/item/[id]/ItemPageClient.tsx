@@ -6,6 +6,7 @@ import type { Item } from "@proven/shared"
 import { AppShell } from "@/components/AppShell"
 import { BuyButton } from "@/components/BuyButton"
 import { ItemCard } from "@/components/ItemCard"
+import { SettlementProof } from "@/components/SettlementProof"
 import { VerifiedBadge, type SellerStatus } from "@/components/VerifiedBadge"
 import { getOwnership, getProvenance, isMockMode } from "@/lib/client"
 
@@ -95,16 +96,29 @@ export const ItemPageClient = ({ id }: ItemPageClientProps) => {
             <p className="checkout-price">${item.priceUsd.toLocaleString()}</p>
             <p className="checkout-caption">One protected transaction</p>
             <VerifiedBadge status={badgeStatus} />
-            <div className="checkout-steps">
-              <div><span>01</span><p>Payment is locked in escrow</p></div>
-              <div><span>02</span><p>Seller ships to your pickup office</p></div>
-              <div><span>03</span><p>Pickup confirmation releases payment</p></div>
-            </div>
+            {isMockMode() ? (
+              <div className="checkout-steps">
+                <div><span>01</span><p>Payment is locked in escrow</p></div>
+                <div><span>02</span><p>Seller ships to your pickup office</p></div>
+                <div><span>03</span><p>Pickup confirmation releases payment</p></div>
+              </div>
+            ) : (
+              <div className="checkout-steps">
+                <div><span>01</span><p>Seller invoice states the price and wallet</p></div>
+                <div><span>02</span><p>Buy pays that invoice in SOL</p></div>
+                <div><span>03</span><p>The same transaction moves the item token</p></div>
+              </div>
+            )}
             <BuyButton itemId={item.id} disabled={item.status !== "AVAILABLE"} />
-            <p className="checkout-assurance">Your money stays protected until the handoff is independently confirmed.</p>
+            <p className="checkout-assurance">
+              {isMockMode()
+                ? "Your money stays protected until the handoff is independently confirmed."
+                : "After you buy, the proof below is read from the validator. Explorer links open the same accounts."}
+            </p>
             {item.status !== "AVAILABLE" ? <p className="checkout-status">This item is {item.status.toLowerCase()}.</p> : null}
           </aside>
         </div>
+        {isMockMode() ? null : <SettlementProof itemId={item.id} itemStatus={item.status} />}
       </div>
     </AppShell>
   )

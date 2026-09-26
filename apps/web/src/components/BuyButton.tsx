@@ -44,11 +44,21 @@ export const BuyButton = ({ itemId, disabled = false }: BuyButtonProps) => {
 
     try {
       const result = await runPurchase(itemId)
+      if (isMockMode()) {
+        const params = new URLSearchParams({
+          itemId,
+          escrowSignature: result.signature,
+        })
+        router.push(`/processing?${params.toString()}`)
+        return
+      }
       const params = new URLSearchParams({
         itemId,
-        escrowSignature: result.signature,
+        signature: result.signature,
+        newOwner: result.newOwner,
+        explorerUrl: result.explorerUrl,
       })
-      router.push(`/processing?${params.toString()}`)
+      router.push(`/success?${params.toString()}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : "Purchase failed"
       router.push(`/item/${encodeURIComponent(itemId)}?error=${encodeURIComponent(message)}`)

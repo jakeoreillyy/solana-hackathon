@@ -1,6 +1,53 @@
 # Proven
 Decentralized trust layer for buying high-value physical items from strangers, on Solana.
 
+## Try the website
+
+The demo listing is:
+
+http://localhost:3000/item/PROVEN-001
+
+That page is the Rolex Submariner (`PROVEN-001`). Press **Buy securely**. The page then shows the seller invoice, who holds the item token, and the seller and buyer SOL balances. Each of those opens on Solana Explorer.
+
+### How to run it
+
+Use two terminals from the repo root.
+
+Terminal 1, leave the local chain running:
+
+```
+npm install
+cp .env.example .env
+npm run validator
+```
+
+Windows, from the repo root: `npm run validator:win`
+
+In `.env`, set the local chain and turn mocks off:
+
+```
+SOLANA_CLUSTER=localnet
+SOLANA_RPC_URL=http://127.0.0.1:8899
+NEXT_PUBLIC_SOLANA_RPC_URL=http://127.0.0.1:8899
+NEXT_PUBLIC_SOLANA_NETWORK=localnet
+NEXT_PUBLIC_USE_MOCKS=false
+```
+
+Terminal 2:
+
+```
+npm run wallets
+npm run airdrop
+npm run seed
+npm run dev
+```
+
+`npm run wallets` prints an attester public key. Put that same value in `.env` as `ATTESTER_PUBKEY` and `NEXT_PUBLIC_ATTESTER_PUBKEY`, then run airdrop and seed.
+
+Open http://localhost:3000/item/PROVEN-001
+
+Explorer links point at this machine's validator (`127.0.0.1:8899`), so open them on the same computer that is running `npm run validator`.
+
 | Person | Area | Folder | Branch |
 |---|---|---|---|
 | 1 | Pitch | docs/pitch | feat/pitch |
@@ -44,7 +91,7 @@ npm run wallets              # writes .keys/*.json; paste the printed attester p
 npm run airdrop              # fund seller + buyer locally
 npm run demo                 # scripted end-to-end: reset -> verify -> buy -> verify owner -> Explorer link
 ```
-Then for the live browser flow: set `NEXT_PUBLIC_USE_MOCKS=false`, `npm run seed`, `npm run dev`.
+Then for the live browser flow: set `NEXT_PUBLIC_USE_MOCKS=false`, `npm run seed`, `npm run dev`, and open http://localhost:3000/item/PROVEN-001.
 Explorer links use the local validator's custom cluster automatically. Full walkthrough:
 docs/DEMO_SCRIPT.md.
 
