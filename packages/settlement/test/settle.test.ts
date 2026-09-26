@@ -1,7 +1,7 @@
 import { create, fetchAssetV1, mplCore } from "@metaplex-foundation/mpl-core"
 import { generateSigner, keypairIdentity, publicKey } from "@metaplex-foundation/umi"
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults"
-import { fromWeb3JsKeypair } from "@metaplex-foundation/umi-web3js-adapters"
+import { fromWeb3JsKeypair, toWeb3JsTransaction } from "@metaplex-foundation/umi-web3js-adapters"
 import type { Item } from "@proven/shared"
 import {
   Connection,
@@ -20,7 +20,7 @@ import {
 } from "../src/purchase"
 
 const MPL_CORE_PROGRAM_ID = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
-const RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com"
+const RPC_URL = process.env.SOLANA_RPC_URL
 
 const sellerAddress = Keypair.generate().publicKey.toBase58()
 const buyerAddress = Keypair.generate().publicKey.toBase58()
@@ -90,11 +90,11 @@ describe("settlement checks", () => {
   })
 })
 
-describe("devnet atomic swap", () => {
-  it(
+describe("local validator atomic swap", () => {
+  it.skipIf(!RPC_URL)(
     "pays the seller and transfers the Core asset to the buyer in one transaction",
     async () => {
-      const connection = new Connection(RPC_URL, "confirmed")
+      const connection = new Connection(RPC_URL ?? "http://127.0.0.1:8899", "confirmed")
       const seller = Keypair.generate()
       const buyer = Keypair.generate()
       const priceLamports = 10_000_000n
@@ -144,12 +144,18 @@ const mintFixture = async (connection: Connection, seller: Keypair): Promise<str
   const umi = createUmi(connection.rpcEndpoint).use(mplCore())
   umi.use(keypairIdentity(fromWeb3JsKeypair(seller)))
   const asset = generateSigner(umi)
-  await create(umi, {
+  let builder = create(umi, {
     asset,
     name: "Proven settlement fixture",
     uri: "https://example.com/proven-settlement-fixture.json",
     owner: publicKey(seller.publicKey.toBase58()),
-  }).sendAndConfirm(umi)
+  }).useLegacyVersion()
+  builder = await builder.setLatestBlockhash(umi)
+  const built = await builder.buildAndSign(umi)
+  const signature = await connection.sendRawTransaction(toWeb3JsTransaction(built).serialize(), {
+    skipPreflight: false,
+  })
+  await connection.confirmTransaction(signature, "confirmed")
   return String(asset.publicKey)
 }
 
