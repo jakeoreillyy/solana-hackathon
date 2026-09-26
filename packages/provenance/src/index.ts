@@ -1,9 +1,10 @@
 import type { ProvenanceApi } from "@proven/shared"
 import { isVerified } from "./verify"
+import { qrFor } from "./qr"
 
 export { isVerified, clearVerifiedCache } from "./verify"
+export { qrFor, itemUrl } from "./qr"
 
-// TODO (P5): QR generation
 export const provenance: ProvenanceApi = {
   // Server-only: guarded so Next.js doesn't try to bundle `fs` for the browser.
   async attestSeller(wallet) {
@@ -15,7 +16,5 @@ export const provenance: ProvenanceApi = {
   },
   isVerified: (wallet) => isVerified(wallet),
   verifySeller: (wallet) => isVerified(wallet),
-  async qrFor() {
-    throw new Error("not implemented")
-  },
+  qrFor,
 }
