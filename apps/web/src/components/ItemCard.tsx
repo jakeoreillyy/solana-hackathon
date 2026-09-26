@@ -7,24 +7,26 @@ type ItemCardProps = {
 
 export const ItemCard = ({ item }: ItemCardProps) => {
   return (
-    <article className="space-y-10" aria-label={`${item.name} listing`}>
-      <header className="space-y-4 text-center">
-        <div className="flex items-center justify-center gap-3">
-          <h1 className="text-4xl font-semibold tracking-tight">{item.name}</h1>
-        </div>
+    <article className="product-detail" aria-label={`${item.name} listing`}>
+      <img
+        src={item.imageUrl}
+        alt={item.name}
+        className="product-detail-image"
+      />
+      <header className="product-detail-header">
+        <h1 className="product-detail-title">{item.name}</h1>
         {item.sellerVerified ? (
-          <div className="flex justify-center">
-            <VerifiedBadge />
-          </div>
+          <VerifiedBadge />
         ) : null}
-        <p className="text-[#6E6E73] max-w-md mx-auto">{item.description}</p>
-        <p className="text-3xl font-semibold tracking-tight pt-2">
-          ${item.priceUsd.toLocaleString()}
-        </p>
+        <p className="product-detail-description">{item.description}</p>
       </header>
 
-      <div className="rounded-2xl bg-[#F5F5F7] p-6">
-        <dl className="grid gap-3 text-sm">
+      <div className="product-record">
+        <div className="product-record-heading">
+          <h2>Item record</h2>
+          <span>ON-CHAIN</span>
+        </div>
+        <dl>
           <div className="flex items-baseline justify-between gap-4">
             <dt className="text-[#6E6E73]">Serial / item identity</dt>
             <dd className="font-mono text-[#1D1D1F]">{item.serialNumber}</dd>
@@ -52,8 +54,8 @@ export const ItemCard = ({ item }: ItemCardProps) => {
         </dl>
       </div>
 
-      <section aria-label="Provenance history">
-        <h2 className="mb-4 text-lg font-semibold tracking-tight">Provenance</h2>
+      <section className="provenance-history" aria-label="Provenance history">
+        <h2>Ownership history</h2>
         {item.history.length === 0 ? (
           <p className="text-sm text-[#6E6E73]">No history yet.</p>
         ) : (

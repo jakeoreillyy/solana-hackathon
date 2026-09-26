@@ -43,7 +43,7 @@ export const SuccessClient = () => {
           <div className="w-14 h-14 rounded-full bg-[#F5F5F7] flex items-center justify-center text-[#1D8348] text-2xl">
             ✓
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight">Purchase complete</h1>
+          <h1 className="text-3xl font-semibold">Purchase complete</h1>
           <p className="text-[#6E6E73]">
             Payment settled and ownership transferred. You are the new owner.
           </p>

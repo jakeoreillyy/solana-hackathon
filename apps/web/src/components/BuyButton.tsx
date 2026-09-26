@@ -20,7 +20,6 @@ export const BuyButton = ({ itemId, disabled = false }: BuyButtonProps) => {
     }
 
     setIsLoading(true)
-    router.push(`/processing?itemId=${encodeURIComponent(itemId)}`)
 
     try {
       // TODO (P4): replace with connected wallet public key once adapter is wired.
@@ -28,11 +27,9 @@ export const BuyButton = ({ itemId, disabled = false }: BuyButtonProps) => {
       const result = await getSettlement().buy(itemId, buyerWallet)
       const params = new URLSearchParams({
         itemId,
-        signature: result.signature,
-        newOwner: result.newOwner,
-        explorerUrl: result.explorerUrl,
+        escrowSignature: result.signature,
       })
-      router.push(`/success?${params.toString()}`)
+      router.push(`/processing?${params.toString()}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : "Purchase failed"
       router.push(`/item/${encodeURIComponent(itemId)}?error=${encodeURIComponent(message)}`)
@@ -56,9 +53,9 @@ export const BuyButton = ({ itemId, disabled = false }: BuyButtonProps) => {
       disabled={disabled || isLoading}
       tabIndex={0}
       aria-label="Buy securely"
-      className="w-full rounded-full bg-[#0071E3] px-6 py-3.5 text-white font-medium hover:bg-[#0077ED] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      className="buy-secure-button"
     >
-      {isLoading ? "Starting…" : "Buy securely"}
+      {isLoading ? "Securing funds…" : "Buy securely"}
     </button>
   )
 }

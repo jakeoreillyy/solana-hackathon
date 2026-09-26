@@ -15,6 +15,7 @@ export interface ProvenanceEntry {
 export interface Item {
   id: string
   name: string
+  category?: string
   description: string
   serialNumber: string
   imageUrl: string
@@ -62,8 +63,10 @@ export interface OwnershipApi {
 
 /** Person 3 — payment + atomic settlement */
 export interface SettlementApi {
-  /** High-level: pay seller + transfer ownership in one flow */
+  /** Deposit payment into transaction-specific escrow. */
   buy(itemId: string, buyerWallet: string): Promise<PurchaseResult>
+  /** Release escrow and transfer ownership after independent pickup confirmation. */
+  confirmPickup(itemId: string, buyerWallet: string): Promise<PurchaseResult>
   /** Lower-level hooks for building/signing when wallet adapter is wired */
   buildPurchaseTransaction(itemId: string, buyerWallet: string): Promise<Uint8Array>
   executePurchase(signedTx: Uint8Array): Promise<PurchaseResult>

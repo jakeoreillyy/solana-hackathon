@@ -5,6 +5,9 @@ export const settlement: SettlementApi = {
   async buy() {
     throw new Error("not implemented")
   },
+  async confirmPickup() {
+    throw new Error("not implemented")
+  },
   async buildPurchaseTransaction() {
     throw new Error("not implemented")
   },
