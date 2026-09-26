@@ -11,6 +11,15 @@ export const ItemCard = ({ item, sellerStatus }: ItemCardProps) => {
   const status: SellerStatus = sellerStatus ?? (item.sellerVerified ? "verified" : "unverified")
   return (
     <article className="space-y-4" aria-label={`${item.name} listing`}>
+      {item.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.imageUrl}
+          alt={item.name}
+          className="aspect-square w-full max-w-sm rounded-lg border border-neutral-200 object-cover"
+        />
+      ) : null}
+
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-3xl font-semibold">{item.name}</h1>
