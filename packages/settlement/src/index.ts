@@ -1,14 +1,18 @@
 import type { SettlementApi } from "@proven/shared"
 
-// TODO (P3): one atomic tx = payment (buyer->seller) + asset transfer (seller->buyer)
+// One transaction: buyer pays seller in SOL, and the Core asset moves to the buyer.
+// Both wallets sign. Escrow is out of scope until this swap is the demo.
 export const settlement: SettlementApi = {
-  async buy() {
-    throw new Error("not implemented")
+  async buy(itemId, buyerWallet) {
+    const { buy } = await import("./purchase")
+    return buy(itemId, buyerWallet)
   },
-  async buildPurchaseTransaction() {
-    throw new Error("not implemented")
+  async buildPurchaseTransaction(itemId, buyerWallet) {
+    const { buildPurchaseTransaction } = await import("./purchase")
+    return buildPurchaseTransaction(itemId, buyerWallet)
   },
-  async executePurchase() {
-    throw new Error("not implemented")
+  async executePurchase(signedTx) {
+    const { executePurchase } = await import("./purchase")
+    return executePurchase(signedTx)
   },
 }
