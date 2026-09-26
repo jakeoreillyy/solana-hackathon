@@ -134,8 +134,10 @@ async function buildTx(
 async function prepare(itemId: string, buyerWallet: string) {
   if (!isServer()) throw new Error("settlement is server-only — call it from a script or API route")
 
-  const item = await storedItem(itemId)
+  // Validate the buyer wallet format before any disk/RPC work, so a bad pubkey is
+  // rejected the same way whether or not the item store has been seeded.
   const buyer = parsePubkey(buyerWallet, "buyer")
+  const item = await storedItem(itemId)
 
   const seller = await demoSeller()
   if (seller.publicKey.toBase58() !== item.sellerWallet) {
