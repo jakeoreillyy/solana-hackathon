@@ -8,7 +8,7 @@ export default {
   transpilePackages: ["@proven/shared", "@proven/ownership", "@proven/settlement", "@proven/provenance"],
   webpack: (config, { isServer }) => {
     // attestSeller (server-only, uses fs) is guarded at runtime; keep it out of the browser bundle.
-    if (!isServer) config.resolve.fallback = { ...config.resolve.fallback, fs: false }
+    if (!isServer) config.resolve.fallback = { ...config.resolve.fallback, fs: false, path: false, url: false }
     return config
   },
 }
