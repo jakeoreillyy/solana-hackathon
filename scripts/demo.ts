@@ -1,1 +1,1 @@
-console.log("TODO: run full demo end to end (Person 5)");
+console.log("TODO (P5): seed, buy, verify buyer owns item, print Explorer URL");

@@ -1,34 +1,31 @@
 // Shared contract between all packages. Change via PR, announce in chat.
 export const CLUSTER = "devnet" as const;
+export const explorerTx = (sig: string) => `https://explorer.solana.com/tx/${sig}?cluster=${CLUSTER}`;
+export const explorerAddr = (a: string) => `https://explorer.solana.com/address/${a}?cluster=${CLUSTER}`;
 
 export interface Item {
-  id: string;            // e.g. PROVEN-001
+  id: string;            // PROVEN-001
   name: string;          // Rolex Submariner
   serial: string;        // 126610LN-8472
   priceUsd: number;
-  assetAddress: string;  // on-chain asset (mint)
+  assetAddress: string;  // on-chain asset
   owner: string;         // current owner wallet
-  seller: string;        // seller wallet
+  seller: string;
   sellerVerified: boolean;
+  history: { owner: string; signature: string; at: string }[];
 }
 
-export interface PurchaseResult {
-  signature: string;
-  newOwner: string;
-  explorerUrl: string;
-}
+export interface PurchaseResult { signature: string; newOwner: string; explorerUrl: string }
 
-// Person 2 implements
-export interface OwnershipApi {
-  registerItem(item: Omit<Item, "assetAddress" | "owner">): Promise<Item>;
+export interface OwnershipApi {          // Person 2
+  registerItem(i: Omit<Item, "assetAddress" | "owner" | "history" | "sellerVerified">): Promise<Item>;
   getItem(id: string): Promise<Item>;
 }
-// Person 3 implements
-export interface SettlementApi {
-  buy(itemId: string, buyer: string): Promise<PurchaseResult>;
+export interface SettlementApi {         // Person 3
+  buy(itemId: string, buyerWallet: string): Promise<PurchaseResult>;
 }
-// Person 5 implements
-export interface ProvenanceApi {
+export interface ProvenanceApi {         // Person 5
   attestSeller(wallet: string): Promise<boolean>;
+  isVerified(wallet: string): Promise<boolean>;
   qrFor(itemId: string): Promise<string>;
 }

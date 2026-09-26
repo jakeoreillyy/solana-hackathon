@@ -2,5 +2,16 @@
   "name": "proven",
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
-  "scripts": { "dev": "npm -w @proven/web run dev", "demo": "npx tsx scripts/demo.ts" }
+  "scripts": {
+    "dev": "npm -w @proven/web run dev",
+    "build": "npm -w @proven/web run build",
+    "wallets": "tsx scripts/gen-wallets.ts",
+    "airdrop": "tsx scripts/airdrop.ts",
+    "seed": "tsx scripts/seed.ts",
+    "demo": "tsx scripts/demo.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": { "@types/node": "^20", "tsx": "^4", "typescript": "^5", "vitest": "^2" },
+  "dependencies": { "@solana/web3.js": "^1.95.0" }
 }

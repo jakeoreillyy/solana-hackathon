@@ -1,6 +1,8 @@
 node_modules
 .next
 .env
-*.json.key
-id.json
+.keys/
 target
+*.log
+dist
+.DS_Store
